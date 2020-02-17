@@ -1,23 +1,33 @@
 <?php
 
-include './checklogin.php';
-$head = checklogin(false);
+include './check_login.php';
+include './error.php';
+$head = checklogin();
 
-if(isset($_POST['action'])  && !empty($_POST['action'])){
+$URL_BASE = "https://www.expensify.com/api";
 
-  server_ping_test();
 
+if( isset($_POST['action'])  && !empty($_POST['action']) ){
+
+  $action = $_POST['action']; 
+  $form = $_POST['form'];
+
+  switch ($action){
+    case "login":
+      // do stuff for logging in
+      login($form);
+    break;
+    default:
+      // log that a broken action has been recorded
+      
+  }
 
     // $vlus = $_POST['json']; 
     // $vlus = blah_decode($vlus);
 }
 
-function respond($data) {
-  echo json_encode($data);
-}
-
 function authenticate_user($email, $password){
-  $url = 'https://www.expensify.com/api?command=Authenticate';
+  $url_params = '?command=Authenticate';
   $data = array('partnerName' => $_PARTNER_NAME, 'partnerPassword' => $_PARTNER_PASSWORD, 
                 'partnerUserID' => $email, 'partnerUserSecret' => $password,);
 

@@ -3,32 +3,46 @@
 $_PARTNER_NAME = 'applicant';
 $_PARTNER_PASSWORD = 'd7c3119c6cdab02d68d9';
 
-function login(){
-    session_start();
-    
-    $msg = '';
-    $print_login = true;
+include './error.php';
 
-    if (isset($_POST['login'])) {
-        extract($_POST['login']);
-        // expensify server should clean data, but just in case...
-        $user = addslashes($username);
+session_start();
 
-        if(!$useremail){
-            // User didn't enter an email...
-            
-        }
+$msg = '';
+$print_login = true;
+$email = '';
+$password = '';
 
-        if (!is_null($result)) {
-            $print_database = false;
-            $print_login = false;
-            $check_login = true;
-        } else {
-            $msg = '<div class="alert alert-danger" style="margin-left: 30px; margin-right: 30px; margin-top: 20px">
-                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                Your username or password did not work. Please try again.
-                </div>';
-        }
+if (isset($_POST['form'])) {
+    $form = $_POST['form'];
+    if (isset($form['email'])){
+        $email = $form['email'];
+    }
+    if (isset($form['password'])){
+        $password = $form['password'];
+    }
+    // expensify server should clean data, but just in case...
+    $email = addslashes($email);
+    $password = addslashes($password);
+
+    if(!$email){
+        // User didn't enter an email...
+        $errors = array(
+            'error_message'=>"User didn't enter an email",
+            'resolution' => "Please enter an email",
+            'target'=>"#login-error"
+        );
+        error($errors);
+    }
+
+    if (!is_null($result)) {
+        $print_database = false;
+        $print_login = false;
+        $check_login = true;
+    } else {
+        $msg = '<div class="alert alert-danger" style="margin-left: 30px; margin-right: 30px; margin-top: 20px">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            Your username or password did not work. Please try again.
+            </div>';
     }
 
     if ($print_login) {
@@ -73,53 +87,7 @@ function login(){
     }
 }
 
-function checklogin() {
-    // Globals
-    global $userid, $username;
-    session_start();
-
-    $login_out_label = "Logout";
-    $login_out_path = "/logout.html";
-    $allowed=false;
-
-    // Permissions & SESSION Handling 
-	if(isset($_SESSION['username'])) {
- 		//the session variable is registered, the user is allowed to see anything that follows
-		$username=$_SESSION["username"];
-		$userid=$_SESSION["userid"];
-
-		if ($userid < 0) {
-            $login_out_label = "Login";
-            $login_out_path = "/login.html";
-        }
-        $allowed=true;
-    } else {
-        // Redirect to Login
-        $server = $_SERVER['HTTP_HOST'];
-        header("location: https://$server/login.php");
-        exit;
-    }
-    
-    $html = "
-            <div>
-                <a href=\"$login_out_path\">
-                    $login_out_label
-                </a> 
-            </div>
-            ";
-
-    if(!$allowed){
-        $html .= no_permission_html();
-    }
-    
-    echo $html;
-    session_write_close();
-	return $html;
-}
-
-
-function no_permission_html()
-{
+function no_permission_html(){
 	$html = "<div id=\"no-permission\" class=\"text-center\">
   				<h4>Permission Denied</h4>
 				<hr>
