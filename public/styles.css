@@ -1,3 +1,9 @@
 body {
   /* background: red; */
 }
+.error {
+  background-color: rgb(255, 103, 103);
+}
+.warning {
+  background-color: rgb(255, 151, 65);
+}

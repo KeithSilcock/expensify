@@ -1,30 +1,34 @@
 <?php
 
 function checklogin() {
-    // Globals
-    global $userid, $username;
-    session_start();
-
-    $login_out_label = "Logout";
-    $login_out_path = "/logout.html";
+    $login_out_label = "Login";
+    $login_out_path = "/login.html";
     $allowed=false;
 
     // Permissions & SESSION Handling 
-	if(isset($_SESSION['username'])) {
- 		//the session variable is registered, the user is allowed to see anything that follows
-		$username=$_SESSION["username"];
-		$userid=$_SESSION["userid"];
-
-		if ($userid < 0) {
-            $login_out_label = "Login";
-            $login_out_path = "/login.html";
+	if(isset($_SESSION['authToken'])) {
+        // check if session has expired by checking if the user has done something within the last 2 hours.
+        if(isset($_SESSION['last_active']) && (time() - $_SESSION['last_active'] > 7200) ){
+            // user login is over 2 hours old. Clearing session
+            session_unset();
+            session_destroy();
+            // creating parameter catch for J.S. to look for to present session expiration warning.
+            $warning = "session_expired=true";
+            backend_redirect("/login.html", $warning);
         }
+        // else, user can continue
         $allowed=true;
+
+        $account_id = $_SESSION['accountID'];
+        $email = $_SESSION['email'];
+        $authToken = $_SESSION['authToken'];
+
+        $login_out_label = "Logout";
+        $login_out_path = "/logout.html";
+
     } else {
         // Redirect to Login
-        $server = $_SERVER['HTTP_HOST'];
-        header("location: https://$server/login.php");
-        exit;
+        backend_redirect("/login.html");
     }
     
     $html = "
@@ -43,10 +47,5 @@ function checklogin() {
     session_write_close();
 	return $html;
 }
-
-function respond($data) {
-    echo json_encode($data);
-  }
-
 
 ?>

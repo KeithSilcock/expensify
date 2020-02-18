@@ -1,11 +1,11 @@
 <?php
-
 $_PARTNER_NAME = 'applicant';
 $_PARTNER_PASSWORD = 'd7c3119c6cdab02d68d9';
+$URL_BASE = "https://www.expensify.com/api";
 
 include './error.php';
-
-session_start();
+include './redirect.php';
+include './init.php';
 
 $msg = '';
 $print_login = true;
@@ -34,58 +34,76 @@ if (isset($_POST['form'])) {
         error($errors);
     }
 
+    $result = authenticate_user($email, $password);
+
     if (!is_null($result)) {
         $print_database = false;
         $print_login = false;
         $check_login = true;
     } else {
-        $msg = '<div class="alert alert-danger" style="margin-left: 30px; margin-right: 30px; margin-top: 20px">
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-            Your username or password did not work. Please try again.
-            </div>';
+        $errors = array(
+            'error_message'=>"Something went wrong",
+            'resolution' => "Please try again. If the issue persists, please contact Keith Silcock at silcockk@gmail.com",
+            'target'=>"#login-error"
+        );
+        error($errors);
     }
 
-    if ($print_login) {
-        echo $msg;
-        $ctls = [
-            'last_page'=>['type'=>'hidden2', 'value'=>$_SESSION['history'][0]],
-            'username'=>['type'=>'text', 'label'=>'', 'placeholder' => 'Username','class' => 'form-control','id'=>'username'],
-            'password'=>['type'=>'password', 'label'=>'','placeholder' => 'Password','class' => 'form-control'],
-        ];
-        echo "<div class=\"form-signin\">";
-        echo mkForm(['controls'=>$ctls,'label'=>'Sign In','form_class'=>'form-signin','id'=>'airsci_login',
-            'button_class'=>'btn btn-large btn-block','theme'=>'modal','suppress_legend'=>true]);
-        echo "</div>";
-    } elseif ($check_login) {
-        $root = $dev? '/var/www/dev/': '/var/www/owens/';
+    setcookie('auth', 'auth', 0);
+    setcookie('accountID', $result['accountID'], 0);
+    setcookie('email', $result['email'], 0);
+    setcookie('authToken', $result['authToken'], 0);
+    setcookie('current_time', time(), 0);
 
-        $timespan = 3600 * 12;
-        ini_set('session.gc_maxlifetime', '36000');
-        ini_set('session.cookie_lifetime', '36000');
+    $_SESSION['accountID'] = $result['accountID'];
+    $_SESSION['email'] = $result['email'];
+    $_SESSION['authToken'] = $result['authToken'];
+    $_SESSION['last_active'] = time();
 
-        setcookie('auth', 'auth', 0);
-        setcookie('userid', $result['user_id'], 0);
-        setcookie('username', $result['user_name'], 0);
-        setcookie('current_time', time(), 0);
-
-        $_SESSION['username'] = $result['user_name'];
-        $_SESSION['userid'] = $result['user_id'];
-        $_SESSION['useremail'] = $result['email'];
-        $_SESSION['project'] = $root;
-
-        /** Redirect Handling */
-        $redirect = true;
-        $homepage = "/";
-        $_SESSION['homepage'] = $homepage;
-        if ($last_page == '') {
-            $last_page = $homepage;
-        }
-        error_log("Login: Redirect Action (redirect, last_page): {$redirect}, {$last_page}", 0);
-        if ($redirect) {
-            header("Location: $last_page");
-        }
-    }
+    redirect("/");
 }
+
+function authenticate_user($email, $password){
+    global $_PARTNER_NAME;
+    global $_PARTNER_PASSWORD;
+    global $URL_BASE;
+    $url_params = '?command=Authenticate';
+    $data = array('partnerName' => $_PARTNER_NAME, 'partnerPassword' => $_PARTNER_PASSWORD, 
+                  'partnerUserID' => $email, 'partnerUserSecret' => $password,);
+  
+    $opts = array(
+        'http' => array(
+            'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+            'method'  => 'POST',
+            'content' => http_build_query($data)
+        )
+    );
+    $context  = stream_context_create($opts);
+    $result = file_get_contents($URL_BASE.$url_params, false, $context);
+    if ($result === FALSE) { 
+      // Something went wrong! 
+      $errors = array(
+        'error_message'=>"Something went wrong with the Expensify API.",
+        'resolution' => "Please try again later, or contact Expensify. ",
+        'target'=>"#login-error"
+        );
+    error($errors);
+    }
+  
+    $result = json_decode($result, true);
+  
+    if ($result['jsonCode'] != 200) {
+      // Something else went wrong!
+      $errors = array(
+        'error_code'=>$result['jsonCode'],
+        'target'=>"#login-error"
+        );
+    error($errors);
+    }
+  
+    return($result);
+  
+  }
 
 function no_permission_html(){
 	$html = "<div id=\"no-permission\" class=\"text-center\">
@@ -95,4 +113,4 @@ function no_permission_html(){
 			</div>";
 
 	return $html;
-}
+    }

@@ -1,3 +1,6 @@
+<?php
+  include "./api.php";
+?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -9,6 +12,7 @@
     <div id="loginContent">
       <!-- Add your login form here -->
     </div>
+
 
     <button onclick="get_function();">GET STUFF</button>
 
