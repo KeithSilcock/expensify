@@ -20,7 +20,7 @@
 
     <p class="logout-text">You have successfully been logged out.</p>
     <p class="logout-text">Have a great day!</p>
-    <a href="/login.html">Log back in</a>
+    <a href="/">Log back in</a>
 
 </div>
     

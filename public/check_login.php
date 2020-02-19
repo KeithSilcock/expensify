@@ -1,9 +1,12 @@
 <?php
 
-function checklogin() {
+function user_is_logged_in() {
     $login_out_label = "Login";
-    $login_out_path = "/login.html";
-    $allowed=false;
+    $login_out_path = "/";
+    $result = array("allowed"=>false,
+                    "warning"=>"",
+                    "error"=>"",
+                    );
 
     // Permissions & SESSION Handling 
 	if(isset($_SESSION['authToken'])) {
@@ -13,39 +16,14 @@ function checklogin() {
             session_unset();
             session_destroy();
             // creating parameter catch for J.S. to look for to present session expiration warning.
-            $warning = "session_expired=true";
-            backend_redirect("/login.html", $warning);
+            $result['warning'] = "<p class='warning'>Your session has expired. Please log in again.</p>";
+            return $result;
         }
         // else, user can continue
-        $allowed=true;
-
-        $account_id = $_SESSION['accountID'];
-        $email = $_SESSION['email'];
-        $authToken = $_SESSION['authToken'];
-
-        $login_out_label = "Logout";
-        $login_out_path = "/logout.html";
-
-    } else {
-        // Redirect to Login
-        backend_redirect("/login.html");
+        $result['allowed'] = true;
     }
-    
-    $html = "
-            <div>
-                <a href=\"$login_out_path\">
-                    $login_out_label
-                </a> 
-            </div>
-            ";
-
-    if(!$allowed){
-        $html .= no_permission_html();
-    }
-    
-    echo $html;
     session_write_close();
-	return $html;
+	return $result;
 }
 
 ?>

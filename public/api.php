@@ -1,24 +1,22 @@
 <?php
 
-include './check_login.php';
-include './error.php';
-include './redirect.php';
-include './init.php';
+include_once './check_login.php';
+include_once './error.php';
+include_once './redirect.php';
+include_once './init.php';
+include_once './ping_expensify.php';
 
-
-$head = checklogin();
 
 $URL_BASE = "https://www.expensify.com/api";
 
 if( isset($_POST['action'])  && !empty($_POST['action']) ){
 
   $action = $_POST['action']; 
-  $form = $_POST['form'];
 
   switch ($action){
-    case "login":
+    case "get-table-data":
       // do stuff for logging in
-      login($form);
+      respond_success(get_table_data());
     break;
     default:
       // log that a broken action has been recorded
@@ -29,35 +27,15 @@ if( isset($_POST['action'])  && !empty($_POST['action']) ){
     // $vlus = blah_decode($vlus);
 }
 
-// function server_ping_test() {
-//   $url = 'https://www.expensify.com/api?command=Authenticate';
-//   $data = array('partnerName' => $_PARTNER_NAME, 'partnerPassword' => $_PARTNER_PASSWORD, 
-//                 'partnerUserID' => 'expensifytest@mailinator.com', 'partnerUserSecret' => 'hire_me',);
+function get_table_data(){
+  $url_params = '?command=Get';
+  $data = array('authToken' => $_SESSION['authToken'], 'returnValueList' => "transactionList", 
+                'startDate' => null, 'endDate' => null,);
 
-//   $opts = array(
-//       'http' => array(
-//           'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-//           'method'  => 'POST',
-//           'content' => http_build_query($data)
-//       )
-//   );
-//   $context  = stream_context_create($opts);
-//   $result = file_get_contents($url, false, $context);
-//   if ($result === FALSE) { 
-//     // Something went wrong! 
-//     respond("Something went wrong, sorry");
-//   }
+  $table_data = expensify_post($data, $url_params);
 
-//   $result = json_decode($result);
-
-//   if ($result['httpCode'] != 200) {
-//     // Something else went wrong!
-//     respond("Something went wrong, sorry");
-//   }
-
-//   respond($result);
-
-// }
+  return($table_data);
+}
 
 function respond_success($data) {
   echo json_encode(array("SUCCESS"=>$data));

@@ -1,19 +1,4 @@
 console.log("Hello World!");
-get_page_parameters();
-
-function get_page_parameters() {
-  let url = new URL(window.location.href);
-  let parameters = new URLSearchParams(url.search);
-  let session_expired = parameters.get("session_expired");
-
-  if (session_expired) {
-    let warning = {
-      warning_message: "Your session has expired. Please log in again.",
-      target: "#login-error"
-    };
-    create_warning(warning);
-  }
-}
 
 // function get_function() {
 //   console.log("working");
@@ -30,7 +15,7 @@ function get_page_parameters() {
 //     .fail(get_failure_function);
 // }
 
-function post_to_server(url, data, done_function, fail_function) {
+function post_to_api_server(url, data, done_function, fail_function) {
   $.ajax({
     type: "POST",
     url: url,
@@ -72,7 +57,7 @@ function check_response_type(data) {
 }
 function create_error(error) {
   // Server creates static error messages, no need to worry about cleaning html
-  $defaults = {
+  defaults = {
     error_code: "",
     error_message: "",
     resolution: "",
@@ -80,7 +65,6 @@ function create_error(error) {
   };
   // combining objects.
   error = { ...defaults, ...error };
-
   let error_message = `<p class='error'>${error.error_message}</p><p class='error'>${error.resolution}</p>`;
   $(error.target).html(error_message);
 }
@@ -101,11 +85,13 @@ function handle_error(error) {
 }
 
 function get_success_function(data) {
+  set_loader(false);
   console.log("successfully retrieved get data!");
   console.log("DATA: ", data);
 }
 
 function get_failure_function(error) {
+  set_loader(false);
   console.log("Did not successfully retrieved the get data...");
   console.log("ERROR: ", error);
 }
@@ -120,7 +106,26 @@ function login() {
     form: form
   };
 
-  post_to_server(url, data, get_success_function, get_failure_function);
+  post_to_api_server(url, data, get_success_function, get_failure_function);
+}
+
+function get_table_results() {
+  console.log("Pulling results");
+  let url = "/api.php";
+  let action = "get-table-data";
+
+  set_loader(true);
+
+  let data = {
+    action: action
+  };
+
+  post_to_api_server(url, data, get_success_function, get_failure_function);
+}
+
+function set_loader(active) {
+  let display = active ? "block" : "none";
+  $(".loader").css("display", display);
 }
 
 function redirect(location) {
