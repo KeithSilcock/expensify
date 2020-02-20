@@ -45,6 +45,15 @@ function get_table_data()
 
   $table_data = expensify_post($data, $url_params);
 
+  // data from Expensify is not coming in ordered, must order it on our server.
+  $transaction_list = $table_data['transactionList'];
+  function date_sort($a, $b)
+  {
+    return strtotime($b['inserted']) - strtotime($a['inserted']);
+  }
+  usort($transaction_list, "date_sort");
+  $table_data['transactionList'] = $transaction_list;
+
   return ($table_data);
 }
 
