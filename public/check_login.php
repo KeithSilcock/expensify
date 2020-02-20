@@ -1,8 +1,6 @@
 <?php
 
 function user_is_logged_in() {
-    $login_out_label = "Login";
-    $login_out_path = "/";
     $result = array("allowed"=>false,
                     "warning"=>"",
                     "error"=>"",
@@ -25,5 +23,3 @@ function user_is_logged_in() {
     session_write_close();
 	return $result;
 }
-
-?>

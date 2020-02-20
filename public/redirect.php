@@ -8,14 +8,3 @@ function redirect($location, $warning=null){
     }
     exit;
 }
-
-function backend_redirect($location, $warning=null){
-    if(isset($warning)){
-        header("Location: $location?$warning");
-    }else{
-        header("Location: $location");
-    }
-    exit;
-}
-
-?>

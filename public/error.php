@@ -8,7 +8,7 @@ function error($error)
         'resolution' => "",
         'target' => "#error",
     );
-
+    // common error codes from Expensify API
     $common_error_codes = array(
         '401' => [
             'description' => "Password is wrong",
@@ -24,8 +24,7 @@ function error($error)
         ],
     );
 
-
-    // combine into single array
+    // merge into single array
     $error = array_merge($defaults, $error);
     $error_code = $error['error_code'];
 

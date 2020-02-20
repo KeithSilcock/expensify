@@ -6,7 +6,6 @@ include_once './redirect.php';
 include_once './init.php';
 include_once './ping_expensify.php';
 
-
 $URL_BASE = "https://www.expensify.com/api";
 
 if (isset($_POST['action'])  && !empty($_POST['action'])) {
@@ -21,15 +20,19 @@ if (isset($_POST['action'])  && !empty($_POST['action'])) {
     case "create-transaction":
       if (isset($_POST['form'])) {
         respond_success(create_transaction($_POST['form']));
+      } else {
+        $errors = array(
+          'error_message' => "Something went wrong",
+          'resolution' => "Please try again. If the issue persists, please contact Keith Silcock at silcockk@gmail.com",
+          'target' => "#modal-warning"
+        );
+        error($errors);
       }
       break;
     default:
-      // log that a broken action has been recorded
-
+      // log that a broken action has been recorded and someone is trying to reach our server NEFARIOUSLY! (maybe...)
+      error_log("An unexpected action has been called: " . $action);
   }
-
-  // $vlus = $_POST['json']; 
-  // $vlus = blah_decode($vlus);
 }
 
 function get_table_data()
@@ -48,10 +51,8 @@ function get_table_data()
 function create_transaction($form)
 {
   $url_params = '?command=CreateTransaction';
-  // will use server side time to send "created" time for consistency. 
-  $now = date("Y-m-d");
   $data = array(
-    'authToken' => $_SESSION['authToken'], 'created' => $now,
+    'authToken' => $_SESSION['authToken'], 'created' => $form['date'],
     'amount' => $form['amount'], 'merchant' => $form['merchant'],
   );
 

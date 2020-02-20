@@ -4,7 +4,6 @@ include_once './api.php';
 function expensify_post($data, $url_params)
 {
     global $URL_BASE;
-
     $opts = array(
         'http' => array(
             'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
@@ -17,7 +16,7 @@ function expensify_post($data, $url_params)
     if (!$result) {
         // Something went wrong! 
         $errors = array(
-            'error_message' => "Something went wrong with the Expensify API.",
+            'error_message' => "Something went wrong at the Expensify API.",
             'resolution' => "Please try again later, or contact Expensify. ",
             'target' => "#error"
         );
@@ -26,6 +25,7 @@ function expensify_post($data, $url_params)
 
     $result = json_decode($result, true);
 
+    // Expensify API uses jsonCode to verify health. Check if healthy
     if ($result['jsonCode'] != 200) {
         // Something else went wrong!
         $errors = array(

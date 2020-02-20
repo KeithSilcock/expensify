@@ -1,5 +1,6 @@
-console.log("Hello World!");
+console.log("Hello Expensify Employees!");
 
+// function to reach api server to get around CORS
 function post_to_api_server(url, data, done_function, fail_function, always = null) {
   $.ajax({
     type: "POST",
@@ -9,9 +10,7 @@ function post_to_api_server(url, data, done_function, fail_function, always = nu
   })
     .done(success_data => {
       success_data = check_response_type(success_data);
-      if (success_data) {
-        done_function(success_data);
-      }
+      done_function(success_data);
     })
     .fail(error => {
       handle_error(error);
@@ -24,6 +23,9 @@ function post_to_api_server(url, data, done_function, fail_function, always = nu
     });
 }
 
+// API server uses key-object convention to determine action.
+// This function checks to see what was returned by our API server
+// and then how to react.
 function check_response_type(data) {
   data_response = Object.keys(data);
   for (response_type_idx in data_response) {
@@ -33,7 +35,7 @@ function check_response_type(data) {
         create_error(data["ERROR"]);
         return false;
       case "MODAL":
-        // create modal
+        // create modal... un-used for now
         break;
       case "REDIRECT":
         redirect(data["REDIRECT"]);
@@ -42,18 +44,20 @@ function check_response_type(data) {
         create_warning(data["WARNING"]);
         return false;
       default:
-        // successful
+        // on success, just return data
         return data["SUCCESS"];
     }
   }
 }
 
+// Login function
 function login() {
   console.log("Attempting login");
   let url = "/login.php";
   // Get all form data and put it into a nice array
   let form = form_decode($("#login-form").serializeArray());
 
+  // since we're going to a specific url, we dont need an action. If we were pinging the api.php, we would need an action.
   let data = {
     form: form
   };
@@ -65,6 +69,7 @@ function login() {
       console.log("successfully logged in!");
     },
     error => {
+      // error message creation is handled in post_to_api_server
       console.log("there was an error loggin user in");
     },
     always_data => {
@@ -73,13 +78,16 @@ function login() {
   );
 }
 
+// call to query all table transactions
 function get_table_results() {
   console.log("Pulling results");
   let url = "/api.php";
   let action = "get-table-data";
 
-  set_loader(true);
+  // displays loading message over table
+  set_loader(true, "Pulling data, Please wait...");
 
+  // no form needed, just getting results
   let data = {
     action: action
   };
@@ -88,12 +96,16 @@ function get_table_results() {
     url,
     data,
     data => {
+      // trying to change message, but DOM freezes with large append.
+      // not worth the time to fix, unfortunately.
+      set_loader(true, "Now creating your table. Please wait...");
       build_table(data);
     },
     error => {
+      // error message creation is handled in post_to_api_server
       // would hide these in production environment
       console.log("Did not successfully retrieved the get data...");
-      console.log("ERROR: ", data);
+      console.log("ERROR: ", error);
     },
     always_data => {
       set_loader(false);
@@ -101,9 +113,9 @@ function get_table_results() {
   );
 }
 
+// constructs transaction table with all transactions.
 function build_table(data) {
   let transaction_list = data["transactionList"];
-  console.log(("transaction_list", transaction_list));
 
   let table_body = $("#transaction-table-body");
   let table_row_array = [];
@@ -112,6 +124,7 @@ function build_table(data) {
     let transaction = transaction_list[transaction_idx];
     let table_row = $(`<tr>`);
 
+    // Each transaction has 36 fields.
     // Options here include either running through all 36 transaction fields... Excessive...
     // Or, we could just pull the data we want. That's what I'm going to do.
 
@@ -122,16 +135,18 @@ function build_table(data) {
 
     // Instead, we'll get a list of important fields and pull from that only.
     // Our table only has 3 headers: Transaction Date, Merchant, and Amount.
-    // Assuming the "created" paramter isn't valid since it is from the year 2999,
+    // Assuming the "created" paramter isn't valid since a lot of the data says it is from the year 2999,
     // I'll be using the timestamp from "inserted".
-    // We could also do this on the server side if we didn't want to send the client all of the transaction data (for security purposes).
+    // We could also do all of this on the server side before sending the data over if we didn't want
+    // to send the client all of the transaction data (for security purposes).
 
+    // create an array of table datas (<td>)
     transaction_row_array = create_transaction_row(transaction);
 
     // HUGE overhead when appending to DOM with jQuery's append. Arrays are much quicker for storage purposes.
-    // Here we create large array before pushing whole set to DOM.
-    // Appending straight to DOM every time: over 1 minute loading time
-    // Appending from array, instead of individually: around 5 seconds load time. MUCH better.
+    // Above, we created a large array before pushing whole array to DOM.
+    // If we were appending straight to DOM every loop, it has over 3 minute creation time.
+    // But if we append the whole array at once, it only has around 5 seconds creation time. MUCH better.
 
     table_row.append(transaction_row_array);
     table_row_array.push(table_row);
@@ -140,6 +155,7 @@ function build_table(data) {
 }
 
 function create_transaction_row(transaction) {
+  // 3 useful parameters from the 36 transaction parameters we want.
   let columns_to_display = ["inserted", "merchant", "amount"];
   transaction_row_array = [];
   for (column_idx in columns_to_display) {
@@ -162,10 +178,11 @@ function create_transaction_row(transaction) {
 }
 
 function create_transaction() {
-  // if there were more potential forms, I would code out a form creator to insert into the modal.
+  // if there were more potential forms, I would code out a form creator here to insert into the modal.
   // since it's just the transaction form, I've hard coded it in the index.php
   set_modal(true);
 }
+// submitting the new transaction to our API server.
 function submit_transaction() {
   console.log("submitting transaction");
   let url = "/api.php";
@@ -173,6 +190,25 @@ function submit_transaction() {
   // Get all form data and put it into a nice array
   let form = form_decode($("#create-transaction-form").serializeArray());
 
+  // form validation: check for all required values.
+  if (!form["amount"] || !form["merchant"] || !form["date"]) {
+    let error = {
+      error_message: "All values are required",
+      resolution: "Please fill out the form.",
+      target: "#modal-warning"
+    };
+    return create_error(error);
+  }
+
+  // check if user entered a number
+  if (!parseFloat(form["amount"])) {
+    let error = {
+      error_message: "Amount must be number only.",
+      resolution: "Please enter an amount.",
+      target: "#modal-warning"
+    };
+    return create_error(error);
+  }
   // format amount to cents...
   form["amount"] = form["amount"] * 100;
 
@@ -185,19 +221,20 @@ function submit_transaction() {
     url,
     data,
     success_data => {
-      // success, insert row
+      // success, insert the row
       insert_row(success_data["transactionList"], $("#transaction-table-body"));
-      console.log("successfully logged in!");
+      console.log("successfully created a transaction!");
+      set_modal(false);
     },
     error => {
-      console.log("there was an error loggin user in");
-    },
-    always_data => {
+      console.log("there was an error creating the transaction.");
       set_modal(false);
-    }
+    },
+    always_data => {}
   );
 }
 
+// prepends the data to the top of the table.
 function insert_row(data, table) {
   let table_row = $(`<tr>`).append(create_transaction_row(data[0]));
   table.prepend(table_row);
@@ -207,41 +244,67 @@ function insert_row(data, table) {
 /// Document Ready: ///
 ///////////////////////
 $(document).ready(() => {
+  // quick close for modal
   $(".modal-background").on("click", () => {
     set_modal(false);
   });
   $(".close-modal").on("click", () => {
     set_modal(false);
   });
+
+  // ease of use for login
+  // if user presses enter while in the login boxes, will submit instead of HAVING to press submit.
+  $("#email").keypress(function(event) {
+    var keycode = event.keyCode ? event.keyCode : event.which;
+    if (keycode == "13") {
+      login();
+    }
+  });
+  $("#password").keypress(function(event) {
+    var keycode = event.keyCode ? event.keyCode : event.which;
+    if (keycode == "13") {
+      login();
+    }
+  });
 });
 
 ///////////////////////
 // helper functions: //
 ///////////////////////
+function clear_form() {
+  $("#modal-warning").empty();
+  $("#amount").val("");
+  $("#merchant").val("");
+  $("#date").val("");
+}
+// basically toggle modal.
 function set_modal(active) {
   active ? $("#modal").show() : $("#modal").hide();
+  clear_form();
 }
+// quick function for weird errors that haven't been handled yet.
 function handle_error(error) {
   console.log("Error from server", error);
 }
 function create_error(error) {
-  // Server creates static error messages, no need to worry about cleaning html
+  // Our API server creates static error messages, no need to worry about cleaning html
   defaults = {
-    error_code: "",
-    error_message: "",
-    resolution: "",
-    target: ""
+    error_code: null,
+    error_message: null,
+    resolution: null,
+    target: null
   };
   // combining objects.
   error = { ...defaults, ...error };
   let error_message = `<p class='error'>${error.error_message}</p><p class='error'>${error.resolution}</p>`;
   $(error.target).html(error_message);
+  return false;
 }
 function create_warning(warning) {
   defaults = {
-    warning_message: "",
-    resolution: "",
-    target: ""
+    warning_message: null,
+    resolution: null,
+    target: null
   };
   // combining objects.
   warning = { ...defaults, ...warning };
@@ -250,9 +313,12 @@ function create_warning(warning) {
   $(warning.target).html(warning_message);
 }
 
-function set_loader(active) {
+// set table loader and text to display
+function set_loader(active, text = "") {
   active ? $("#table-loader").show() : $("#table-loader").hide();
+  // disables "create transaction" button while table is loading. Doesnt work great because button still looks clickable. Would fix with more time.
   $("#create-transaction-button").attr("disabled", active);
+  $("#loader-text").text(text);
 }
 
 function redirect(location) {
@@ -260,8 +326,8 @@ function redirect(location) {
   window.location.replace(location);
 }
 
+// Decoding jquery serialized array to personal preference
 function form_decode(form) {
-  // Decoding jquery serialized array to personal preference
   let decoded_form = {};
   for (input_index in form) {
     let input_vals = form[input_index];

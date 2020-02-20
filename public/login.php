@@ -4,49 +4,44 @@ include_once './redirect.php';
 include_once './init.php';
 include_once './ping_expensify.php';
 
-$msg = '';
-$print_login = true;
-$email = '';
-$password = '';
+$email = "";
+$password = "";
 
 if (isset($_POST['form'])) {
     $form = $_POST['form'];
-    if (isset($form['email'])){
+    if (isset($form['email'])) {
         $email = $form['email'];
     }
-    if (isset($form['password'])){
+    if (isset($form['password'])) {
         $password = $form['password'];
     }
-    // expensify server should clean data, but just in case...
+    // expensify server should clean data, but just in case we'll break up anything funny
     $email = addslashes($email);
     $password = addslashes($password);
 
-    if(!$email){
+    if (!$email) {
         // User didn't enter an email...
         $errors = array(
-            'error_message'=>"User didn't enter an email",
+            'error_message' => "No email provided.",
             'resolution' => "Please enter an email",
-            'target'=>"#error"
+            'target' => "#error"
         );
         error($errors);
     }
-
+    // perform reach out to expensify API to verify user login
     $result = authenticate_user($email, $password);
 
-    if (!is_null($result)) {
-        $print_database = false;
-        $print_login = false;
-        $check_login = true;
-    } else {
+    // if no response
+    if (is_null($result)) {
         $errors = array(
-            'error_message'=>"Something went wrong",
+            // generic message due to unknown issue.
+            'error_message' => "Something went wrong.",
             'resolution' => "Please try again. If the issue persists, please contact Keith Silcock at silcockk@gmail.com",
-            'target'=>"#error"
+            'target' => "#error"
         );
         error($errors);
     }
 
-    setcookie('auth', 'auth', 0);
     setcookie('accountID', $result['accountID'], 0);
     setcookie('email', $result['email'], 0);
     setcookie('authToken', $result['authToken'], 0);
@@ -57,27 +52,21 @@ if (isset($_POST['form'])) {
     $_SESSION['authToken'] = $result['authToken'];
     $_SESSION['last_active'] = time();
 
+    // back to homepage to display table results
     redirect("/");
 }
 
-function authenticate_user($email, $password){
+function authenticate_user($email, $password)
+{
     $_PARTNER_NAME = 'applicant';
     $_PARTNER_PASSWORD = 'd7c3119c6cdab02d68d9';
     $url_params = '?command=Authenticate';
-    $data = array('partnerName' => $_PARTNER_NAME, 'partnerPassword' => $_PARTNER_PASSWORD, 
-                  'partnerUserID' => $email, 'partnerUserSecret' => $password,);
+    $data = array(
+        'partnerName' => $_PARTNER_NAME, 'partnerPassword' => $_PARTNER_PASSWORD,
+        'partnerUserID' => $email, 'partnerUserSecret' => $password,
+    );
 
     $result = expensify_post($data, $url_params);
-  
-    return($result);
-  }
 
-function no_permission_html(){
-	$html = "<div id=\"no-permission\" class=\"text-center\">
-  				<h4>Permission Denied</h4>
-				<hr>
-				<p class=\"\" style=\"font-size: 1em\">You do not have permission to perform this action.</p>
-			</div>";
-
-	return $html;
-    }
+    return ($result);
+}
