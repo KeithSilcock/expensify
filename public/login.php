@@ -26,7 +26,7 @@ if (isset($_POST['form'])) {
         $errors = array(
             'error_message'=>"User didn't enter an email",
             'resolution' => "Please enter an email",
-            'target'=>"#login-error"
+            'target'=>"#error"
         );
         error($errors);
     }
@@ -41,7 +41,7 @@ if (isset($_POST['form'])) {
         $errors = array(
             'error_message'=>"Something went wrong",
             'resolution' => "Please try again. If the issue persists, please contact Keith Silcock at silcockk@gmail.com",
-            'target'=>"#login-error"
+            'target'=>"#error"
         );
         error($errors);
     }
