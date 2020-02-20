@@ -1,6 +1,7 @@
 body {
   /* background: red; */
   /* ^^ Sorry I had to remove that :P */
+  background: rgb(245, 245, 245);
 }
 h2 {
   margin-bottom: 5px;
